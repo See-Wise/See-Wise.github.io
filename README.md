@@ -1,4 +1,1 @@
-实现python使用脚本
-motivation实现每次运行输出鼓励句子
-shixian实现对已有目录截图进行整理，同时在运行期间对截图持续整理，每十天为一个文件夹，自动整理
-建议：添加到任务执行计划，实现定时整理和自动鼓励
+The first version of the release implements automatic classification of images (by creation time)
