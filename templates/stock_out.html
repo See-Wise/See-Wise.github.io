@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Out - Mini Inventory Mobile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8 col-12">
+        <!-- Product Info Card -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-box-seam me-2"></i>Product Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6 class="card-title">{{ product.name }}</h6>
+                {% if product.description %}
+                    <p class="text-muted mb-2">{{ product.description }}</p>
+                {% endif %}
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">Available Stock:</small>
+                        <div class="fw-bold text-primary">{{ "%.1f"|format(product.quantity) }} units</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Location:</small>
+                        <div><span class="badge bg-secondary">{{ product.location }}</span></div>
+                    </div>
+                </div>
+                
+                {% if product.quantity == 0 %}
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Out of Stock!</strong> No items available to remove.
+                </div>
+                {% elif product.quantity <= 10 %}
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Low Stock Warning!</strong> Only {{ "%.1f"|format(product.quantity) }} units remaining.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Stock Out Form -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-dash-circle me-2"></i>Stock Out
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if product.quantity > 0 %}
+                <form method="POST">
+                    <div class="form-floating mb-3">
+                        <input type="number" class="form-control" id="quantity" name="quantity" 
+                               placeholder="Quantity" step="0.1" min="0.1" max="{{ product.quantity }}" required>
+                        <label for="quantity">Quantity to Remove *</label>
+                        <div class="form-text">Maximum: {{ "%.1f"|format(product.quantity) }} units</div>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <textarea class="form-control" id="note" name="note" 
+                                  placeholder="Note" style="height: 100px"></textarea>
+                        <label for="note">Note (Optional)</label>
+                    </div>
+
+                    <!-- Quick Quantity Buttons -->
+                    <div class="mb-3">
+                        <label class="form-label">Quick Remove:</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-warning btn-sm quick-qty" data-qty="1">-1</button>
+                            <button type="button" class="btn btn-outline-warning btn-sm quick-qty" data-qty="5">-5</button>
+                            <button type="button" class="btn btn-outline-warning btn-sm quick-qty" data-qty="10">-10</button>
+                            {% if product.quantity >= 25 %}
+                            <button type="button" class="btn btn-outline-warning btn-sm quick-qty" data-qty="25">-25</button>
+                            {% endif %}
+                            {% if product.quantity >= 50 %}
+                            <button type="button" class="btn btn-outline-warning btn-sm quick-qty" data-qty="50">-50</button>
+                            {% endif %}
+                            <button type="button" class="btn btn-outline-danger btn-sm" id="removeAll">Remove All</button>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-check-circle me-1"></i>Remove Stock
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-x-circle display-3 text-muted"></i>
+                    <h5 class="text-muted mt-3">No Stock Available</h5>
+                    <p class="text-muted">Add stock first before removing items.</p>
+                    <a href="{{ url_for('stock_in', product_id=product.product_id) }}" class="btn btn-success">
+                        <i class="bi bi-plus-circle me-1"></i>Add Stock
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Preview Card -->
+        <div class="card mt-3 d-none" id="previewCard">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-eye me-2"></i>Preview
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-4 text-center">
+                        <small class="text-muted">Current</small>
+                        <div class="fw-bold">{{ "%.1f"|format(product.quantity) }}</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <small class="text-muted">Removing</small>
+                        <div class="fw-bold text-warning" id="removingQty">0</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <small class="text-muted">Remaining</small>
+                        <div class="fw-bold text-primary" id="newTotal">{{ "%.1f"|format(product.quantity) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const currentStock = {{ product.quantity }};
+    const quantityInput = document.getElementById('quantity');
+    const previewCard = document.getElementById('previewCard');
+    const removingQty = document.getElementById('removingQty');
+    const newTotal = document.getElementById('newTotal');
+    const removeAllBtn = document.getElementById('removeAll');
+
+    {% if product.quantity > 0 %}
+    // Quick quantity buttons
+    document.querySelectorAll('.quick-qty').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const qty = parseFloat(this.dataset.qty);
+            quantityInput.value = qty.toFixed(1);
+            updatePreview();
+        });
+    });
+
+    // Remove all button
+    if (removeAllBtn) {
+        removeAllBtn.addEventListener('click', function() {
+            quantityInput.value = currentStock.toFixed(1);
+            updatePreview();
+        });
+    }
+
+    // Update preview when quantity changes
+    quantityInput.addEventListener('input', function() {
+        const qty = parseFloat(this.value) || 0;
+        
+        // Validate against available stock
+        if (qty > currentStock) {
+            this.value = currentStock.toFixed(1);
+        }
+        
+        updatePreview();
+    });
+
+    function updatePreview() {
+        const qty = parseFloat(quantityInput.value) || 0;
+        if (qty > 0) {
+            previewCard.classList.remove('d-none');
+            removingQty.textContent = qty.toFixed(1);
+            const remaining = Math.max(0, currentStock - qty);
+            newTotal.textContent = remaining.toFixed(1);
+            
+            // Change color based on remaining stock
+            newTotal.className = 'fw-bold ' + (remaining === 0 ? 'text-danger' : (remaining <= 10 ? 'text-warning' : 'text-primary'));
+        } else {
+            previewCard.classList.add('d-none');
+        }
+    }
+
+    // Auto-focus quantity input
+    if (window.innerWidth < 768) {
+        setTimeout(() => {
+            quantityInput.focus();
+        }, 500);
+    }
+    {% endif %}
+</script>
+{% endblock %}

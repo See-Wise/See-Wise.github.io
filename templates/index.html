@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Mini Inventory Mobile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-boxes me-2"></i>Inventory Overview
+                </h5>
+                <span class="badge bg-light text-dark">{{ products|length }} Products</span>
+            </div>
+            <div class="card-body p-0">
+                {% if products %}
+                    <!-- Desktop/Tablet View -->
+                    <div class="table-responsive d-none d-md-block">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Stock</th>
+                                    <th>Price</th>
+                                    <th>Location</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ product.name }}</strong>
+                                            {% if product.description %}
+                                                <br><small class="text-muted">{{ product.description }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if product.quantity > 50 %}
+                                            <span class="stock-badge bg-success text-white">{{ "%.1f"|format(product.quantity) }}</span>
+                                        {% elif product.quantity > 10 %}
+                                            <span class="stock-badge bg-warning text-white">{{ "%.1f"|format(product.quantity) }}</span>
+                                        {% else %}
+                                            <span class="stock-badge bg-danger text-white">{{ "%.1f"|format(product.quantity) }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ "%.2f"|format(product.price) }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ product.location }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('stock_in', product_id=product.product_id) }}" 
+                                               class="btn btn-success" title="Stock In">
+                                                <i class="bi bi-plus-circle"></i>
+                                            </a>
+                                            <a href="{{ url_for('stock_out', product_id=product.product_id) }}" 
+                                               class="btn btn-warning" title="Stock Out">
+                                                <i class="bi bi-dash-circle"></i>
+                                            </a>
+                                            <a href="{{ url_for('edit_product', product_id=product.product_id) }}" 
+                                               class="btn btn-primary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form style="display: inline;" method="POST" 
+                                                  action="{{ url_for('delete_product', product_id=product.product_id) }}"
+                                                  onsubmit="return confirmDelete('{{ product.name }}')">
+                                                <button type="submit" class="btn btn-danger" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-md-none">
+                        {% for product in products %}
+                        <div class="card m-2 {{ 'border-success' if product.quantity > 50 else ('border-warning' if product.quantity > 10 else 'border-danger') }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title mb-1">{{ product.name }}</h6>
+                                        {% if product.description %}
+                                            <p class="text-muted small mb-1">{{ product.description }}</p>
+                                        {% endif %}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-secondary">{{ product.location }}</span>
+                                            <span class="text-muted small">${{ "%.2f"|format(product.price) }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        {% if product.quantity > 50 %}
+                                            <span class="stock-badge bg-success text-white">{{ "%.1f"|format(product.quantity) }}</span>
+                                        {% elif product.quantity > 10 %}
+                                            <span class="stock-badge bg-warning text-white">{{ "%.1f"|format(product.quantity) }}</span>
+                                        {% else %}
+                                            <span class="stock-badge bg-danger text-white">{{ "%.1f"|format(product.quantity) }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex gap-1">
+                                    <a href="{{ url_for('stock_in', product_id=product.product_id) }}" 
+                                       class="btn btn-success btn-sm flex-fill">
+                                        <i class="bi bi-plus-circle me-1"></i>In
+                                    </a>
+                                    <a href="{{ url_for('stock_out', product_id=product.product_id) }}" 
+                                       class="btn btn-warning btn-sm flex-fill">
+                                        <i class="bi bi-dash-circle me-1"></i>Out
+                                    </a>
+                                    <a href="{{ url_for('edit_product', product_id=product.product_id) }}" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form style="display: inline;" method="POST" 
+                                          action="{{ url_for('delete_product', product_id=product.product_id) }}"
+                                          onsubmit="return confirmDelete('{{ product.name }}')">
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-5">
+                        <i class="bi bi-box-seam display-1 text-muted mb-3"></i>
+                        <h4 class="text-muted">No Products Yet</h4>
+                        <p class="text-muted mb-4">Get started by adding your first product to inventory.</p>
+                        <a href="{{ url_for('add_product') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-plus-circle me-2"></i>Add Your First Product
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if products %}
+<!-- Summary Cards -->
+<div class="row mt-3">
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-boxes text-primary fs-1"></i>
+                <h5 class="card-title mt-2">{{ products|length }}</h5>
+                <p class="card-text text-muted">Total Products</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-check-circle text-success fs-1"></i>
+                <h5 class="card-title mt-2">{{ products|selectattr('quantity', '>', 10)|list|length }}</h5>
+                <p class="card-text text-muted">In Stock</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-exclamation-triangle text-warning fs-1"></i>
+                <h5 class="card-title mt-2">{{ products|selectattr('quantity', '<=', 10)|selectattr('quantity', '>', 0)|list|length }}</h5>
+                <p class="card-text text-muted">Low Stock</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-x-circle text-danger fs-1"></i>
+                <h5 class="card-title mt-2">{{ products|selectattr('quantity', '==', 0)|list|length }}</h5>
+                <p class="card-text text-muted">Out of Stock</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions for Mobile -->
+<div class="quick-actions d-md-none">
+    <a href="{{ url_for('add_product') }}" class="fab btn btn-primary" title="Add Product">
+        <i class="bi bi-plus"></i>
+    </a>
+</div>
+
+<!-- Locations Summary -->
+{% if locations %}
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-geo-alt me-2"></i>Storage Locations
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for location in locations %}
+                    <div class="col-md-3 col-6 mb-2">
+                        <a href="{{ url_for('search', location=location) }}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-folder me-1"></i>{{ location }}
+                            <span class="badge bg-primary ms-1">{{ products|selectattr('location', 'equalto', location)|list|length }}</span>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Refresh page every 30 seconds for real-time updates
+    // setTimeout(function() {
+    //     location.reload();
+    // }, 30000);
+    
+    // Add touch feedback for mobile
+    if ('ontouchstart' in window) {
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.95)';
+            });
+            btn.addEventListener('touchend', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    }
+</script>
+{% endblock %}

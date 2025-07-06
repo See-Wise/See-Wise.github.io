@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Stock In - Mini Inventory Mobile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8 col-12">
+        <!-- Product Info Card -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-box-seam me-2"></i>Product Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6 class="card-title">{{ product.name }}</h6>
+                {% if product.description %}
+                    <p class="text-muted mb-2">{{ product.description }}</p>
+                {% endif %}
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">Current Stock:</small>
+                        <div class="fw-bold text-primary">{{ "%.1f"|format(product.quantity) }} units</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Location:</small>
+                        <div><span class="badge bg-secondary">{{ product.location }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock In Form -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>Stock In
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="form-floating mb-3">
+                        <input type="number" class="form-control" id="quantity" name="quantity" 
+                               placeholder="Quantity" step="0.1" min="0.1" required>
+                        <label for="quantity">Quantity to Add *</label>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <textarea class="form-control" id="note" name="note" 
+                                  placeholder="Note" style="height: 100px"></textarea>
+                        <label for="note">Note (Optional)</label>
+                    </div>
+
+                    <!-- Quick Quantity Buttons -->
+                    <div class="mb-3">
+                        <label class="form-label">Quick Add:</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm quick-qty" data-qty="1">+1</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm quick-qty" data-qty="5">+5</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm quick-qty" data-qty="10">+10</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm quick-qty" data-qty="25">+25</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm quick-qty" data-qty="50">+50</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm quick-qty" data-qty="100">+100</button>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-1"></i>Add Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Preview Card -->
+        <div class="card mt-3 d-none" id="previewCard">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-eye me-2"></i>Preview
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-4 text-center">
+                        <small class="text-muted">Current</small>
+                        <div class="fw-bold">{{ "%.1f"|format(product.quantity) }}</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <small class="text-muted">Adding</small>
+                        <div class="fw-bold text-success" id="addingQty">0</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <small class="text-muted">New Total</small>
+                        <div class="fw-bold text-primary" id="newTotal">{{ "%.1f"|format(product.quantity) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const currentStock = {{ product.quantity }};
+    const quantityInput = document.getElementById('quantity');
+    const previewCard = document.getElementById('previewCard');
+    const addingQty = document.getElementById('addingQty');
+    const newTotal = document.getElementById('newTotal');
+
+    // Quick quantity buttons
+    document.querySelectorAll('.quick-qty').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const qty = parseFloat(this.dataset.qty);
+            const currentVal = parseFloat(quantityInput.value) || 0;
+            quantityInput.value = (currentVal + qty).toFixed(1);
+            updatePreview();
+        });
+    });
+
+    // Update preview when quantity changes
+    quantityInput.addEventListener('input', updatePreview);
+
+    function updatePreview() {
+        const qty = parseFloat(quantityInput.value) || 0;
+        if (qty > 0) {
+            previewCard.classList.remove('d-none');
+            addingQty.textContent = qty.toFixed(1);
+            newTotal.textContent = (currentStock + qty).toFixed(1);
+        } else {
+            previewCard.classList.add('d-none');
+        }
+    }
+
+    // Auto-focus quantity input
+    if (window.innerWidth < 768) {
+        setTimeout(() => {
+            quantityInput.focus();
+        }, 500);
+    }
+</script>
+{% endblock %}
