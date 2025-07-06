@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction History - Mini Inventory Mobile{% endblock %}
+
+{% block content %}
+<!-- Filter Form -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history me-2"></i>Transaction History
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-8">
+                <div class="form-floating">
+                    <select class="form-select" id="product_id" name="product_id">
+                        <option value="">All Products</option>
+                        {% for product in products %}
+                        <option value="{{ product.product_id }}" 
+                                {{ 'selected' if product.product_id == selected_product_id }}>
+                            {{ product.name }} - {{ product.location }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <label for="product_id">Filter by product</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-floating">
+                    <select class="form-select" id="limit" name="limit">
+                        <option value="50" {{ 'selected' if request.args.get('limit', '50') == '50' }}>50</option>
+                        <option value="100" {{ 'selected' if request.args.get('limit', '50') == '100' }}>100</option>
+                        <option value="200" {{ 'selected' if request.args.get('limit', '50') == '200' }}>200</option>
+                    </select>
+                    <label for="limit">Limit</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 h-100">
+                    <i class="bi bi-filter"></i>
+                    <span class="d-none d-md-inline ms-1">Filter</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Transactions List -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-list-ul me-2"></i>Recent Transactions
+        </h5>
+        <span class="badge bg-light text-dark">{{ transactions|length }} Records</span>
+    </div>
+    <div class="card-body p-0">
+        {% if transactions %}
+            <!-- Desktop/Tablet View -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Product</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in transactions %}
+                        <tr>
+                            <td>
+                                <small class="text-muted">
+                                    {{ trans.date.strftime('%Y-%m-%d %H:%M') if trans.date else 'Unknown' }}
+                                </small>
+                            </td>
+                            <td>
+                                <strong>{{ trans.product_name }}</strong>
+                            </td>
+                            <td>
+                                {% if trans.type == 'IN' %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-plus-circle me-1"></i>Stock In
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning">
+                                        <i class="bi bi-dash-circle me-1"></i>Stock Out
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ "%.1f"|format(trans.quantity) }}</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ trans.note or '-' }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="d-md-none">
+                {% for trans in transactions %}
+                <div class="card m-2 border-start border-4 {{ 'border-success' if trans.type == 'IN' else 'border-warning' }}">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title mb-1">{{ trans.product_name }}</h6>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    {% if trans.type == 'IN' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-plus-circle me-1"></i>In
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-dash-circle me-1"></i>Out
+                                        </span>
+                                    {% endif %}
+                                    <span class="fw-bold">{{ "%.1f"|format(trans.quantity) }}</span>
+                                </div>
+                                {% if trans.note %}
+                                    <p class="text-muted small mb-1">{{ trans.note }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">
+                                    {{ trans.date.strftime('%m/%d %H:%M') if trans.date else 'Unknown' }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="bi bi-clock-history display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">No Transactions Yet</h4>
+                <p class="text-muted mb-4">
+                    {% if selected_product_id %}
+                        No transactions found for the selected product.
+                    {% else %}
+                        Start by adding or removing stock to see transaction history.
+                    {% endif %}
+                </p>
+                {% if selected_product_id %}
+                    <a href="{{ url_for('transactions') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>View All Transactions
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Inventory
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-submit form when product filter changes
+    document.getElementById('product_id').addEventListener('change', function() {
+        this.form.submit();
+    });
+
+    // Auto-submit form when limit changes
+    document.getElementById('limit').addEventListener('change', function() {
+        this.form.submit();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Add Product - Mini Inventory Mobile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8 col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>Add New Product
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="name" name="name" 
+                               placeholder="Product Name" required>
+                        <label for="name">Product Name *</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="number" class="form-control" id="price" name="price" 
+                               placeholder="Price" step="0.01" min="0" value="0">
+                        <label for="price">Price ($)</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="location" name="location" 
+                               placeholder="Storage Location" required list="locationList">
+                        <label for="location">Storage Location *</label>
+                        
+                        {% if locations %}
+                        <datalist id="locationList">
+                            {% for location in locations %}
+                            <option value="{{ location }}">
+                            {% endfor %}
+                        </datalist>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <textarea class="form-control" id="description" name="description" 
+                                  placeholder="Description" style="height: 100px"></textarea>
+                        <label for="description">Description (Optional)</label>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>Add Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Location Suggestions -->
+        {% if locations %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-geo-alt me-2"></i>Existing Locations
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for location in locations %}
+                    <button type="button" class="btn btn-outline-secondary btn-sm location-btn" 
+                            data-location="{{ location }}">
+                        {{ location }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-fill location when clicking suggestion buttons
+    document.querySelectorAll('.location-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('location').value = this.dataset.location;
+            document.getElementById('location').focus();
+        });
+    });
+
+    // Auto-focus first input on mobile
+    if (window.innerWidth < 768) {
+        setTimeout(() => {
+            document.getElementById('name').focus();
+        }, 500);
+    }
+</script>
+{% endblock %}
